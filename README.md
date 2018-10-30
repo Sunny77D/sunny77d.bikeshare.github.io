@@ -6,5 +6,5 @@ This Includes my:
 3. Image Folder of all my graphs. 
 
 NOTE: I used one of github's theme called "Cayman" as a baseline for my website.
-There Repo can be founded here: https://github.com/pages-themes/cayman 
+Their Repo can be founded here: https://github.com/pages-themes/cayman 
 
