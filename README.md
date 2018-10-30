@@ -5,5 +5,6 @@ This Includes my:
 2. R.rmd file (R-markdown file) for my R code that I use to process data and create graphs.
 3. Image Folder of all my graphs. 
 
-NOTE: I used one of github's theme called Cayman Theme ask a baseline for my website.
+NOTE: I used one of github's theme called "Cayman" as a baseline for my website.
+There Repo can be founded here: https://github.com/pages-themes/cayman 
 
