@@ -10,21 +10,17 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+## Main Bike Share Code
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
+```{r bike share}
 install.packages("ggplot2")
-install.packages("rbokeh")
-install.packages("RCurl")
-install.packages("RJSONIO")
+install.packages("rbokeh") # delete this line
+install.packages("RCurl") # delete this line
+install.packages("RJSONIO") # delete this line
 
 library(ggplot2)
 
-bike_share <- read.csv("C:/Users/Son Do/Desktop/metro-bike-share-trip-data.csv")
+bike_share <- read.csv("C:/Users/Son Do/Desktop/metro-bike-share-trip-data.csv") # changed the file path (don't change)
 summary(bike_share)
 
 # Top 10 Most Used Bikes base on Duration
@@ -37,24 +33,29 @@ top10.usedDuration <-cbind(Bike_ID = rownames(top10.usedDuration), top10.usedDur
 rownames(top10.usedDuration) <- 1:nrow(top10.usedDuration)
 View(top10.usedDuration)
 names(top10.usedDuration) <- c("BIKE_ID", "Freq")
-View(top10.usedDuration)
-top10_usedbikesDuration <- ggplot(data = top10.usedDuration,
-aes(x= reorder(BIKE_ID,-Freq), y = Freq)) +
-geom_bar(stat="identity")
+ggplot(data = top10.usedDuration,
+                          aes(x= reorder(BIKE_ID,-Freq), y = Freq, fill = BIKE_ID)) + # add color
+                          geom_bar(stat="identity") +
+                          geom_text(aes(label=Freq), vjust=1.6, color="white", size=3.5) + # add frequency to plot
+                          xlab("Bike ID #") +
+                          ylab("Total Sum of Use Duration (min)") + # condense code by modifying x                                                                                      and y labs in gg plot code
+                          theme_minimal() # remove axes for clean look
 
-top10_usedbikesDuration + labs(x = "Bikes ID", y = "Total Sum of use Duration")
 ggsave("top10_usedbikesDuration.png")
 
 # Most Used Bikes Data
 bikes_id <- as.data.frame(bike_share$Bike.ID)
-View(bikes_id)
 top10.commonbikes<-as.data.frame(sort(table(bikes_id),decreasing=TRUE)[1:10])
 names(top10.commonbikes) <- c("BIKE_ID", "Freq")
-View(top10.commonbikes)
+
 top10_usedbikes <- ggplot(data = top10.commonbikes,
-aes(x = BIKE_ID, y = Freq)) +
-geom_bar(stat="identity")
-top10_usedbikes + labs(x = "Bike ID", y = "Number of Uses")
+                          aes(x = BIKE_ID, y = Freq, fill = BIKE_ID)) +
+                          geom_bar(stat="identity") +
+                          geom_text(aes(label=Freq), vjust=1.6, color="white", size=3.5) + # add frequency to plot
+                          xlab("Bike ID #") +
+                          ylab("Number of Uses") +
+                          theme_minimal()
+
 ggsave("top10_usedbikes.png")
 
 # Top 5 dates
@@ -62,22 +63,38 @@ date <- data.frame(do.call('rbind', strsplit(as.character(bike_share$Start.Time)
 date <- subset(date, select = c(X1))
 top5.dates<- as.data.frame(sort(table(date),decreasing=TRUE)[1:5])
 names(top5.dates) <- c("Dates", "Freq")
+top5.dates$Month <- c("October", "August", "August", "August", "August") # create a new column for months
+
 
 p <- ggplot(data = top5.dates,
-aes(x = Dates, y = Freq)) +
-geom_bar(stat="identity")
-p + labs(x = "Dates: YYYY-MM-DD", y = "Number of Trips")
+            aes(x = Dates, y = Freq, fill = Month)) + # fill the dates by month
+            geom_bar(stat="identity") +
+            geom_text(aes(label=Freq), vjust=1.6, color="white", size=3.5) + # add frequency to plot
+            xlab("Dates: YYYY-MM-DD") +
+            ylab("Number of Trips") +
+            theme_light()
+
 ggsave("top5_dates.png")
 
 # Top 10 Start and End Stations 
 bikes_ssID <- as.data.frame(bike_share$Starting.Station.ID)
 top10.startStation<-as.data.frame(sort(table(bikes_ssID),decreasing=TRUE)[1:10])
-names(top10.startStation) <- c("StartingStation_ID", "Freq")
-View(top10.startStation)
-p <- ggplot(data = top10.startStation,
-aes(x = StartingStation_ID, y = Freq)) +
-geom_bar(stat="identity")
-p + labs(x = "Starting Station ID", y = "Number of Uses")
+names(top10.startStation) <- c("Station_ID", "Freq")
+top10.startStation$Category <- c("Starting") # add a new column that categorize the station as starting or ending
+
+bikes_esID <- as.data.frame(bike_share$Ending.Station.ID)
+top10.endStation<-as.data.frame(sort(table(bikes_esID),decreasing=TRUE)[1:10])
+names(top10.endStation) <- c("Station_ID", "Freq")
+top10.endStation$Category <- c("Ending") # add a new column that categorize the station as starting or ending
+
+d <- rbind(top10.startStation, top10.endStation) # merge the top starting and ending with rbind
+
+p<- ggplot(d, aes(Station_ID, Freq, fill = Category)) + 
+           geom_bar(position = "dodge", stat = "identity") +
+           xlab("Station ID #") +
+           ylab("Number of Uses") +
+           theme_linedraw() # merged bar graph for starting and ending stations
+
 ggsave("starting_station.png")
 
 
@@ -93,8 +110,8 @@ ggsave("ending_station.png")
 
 
 #Average distance traveled per ride
-bikes_duration <- bike_share[["Duration"]]
-bikes_distance <- numeric(length = length(bikes_duration))
+bikes_duration <- as.data.frame(bike_share[["Duration"]])
+bikes_distance <- as.data.frame(numeric(length = length(bikes_duration)))
 View(bikes_distance)
 bikeSpeedMperS = 4.2
 for (i in seq_along(bikes_duration)) {
@@ -103,12 +120,12 @@ for (i in seq_along(bikes_duration)) {
 
 View(bikes_distance)
 distStat <- do.call(data.frame,
-  list(mean = apply(bikes_distance.data, 2, mean),
-  sd = apply(bikes_distance.data, 2, sd),
-  median = apply(bikes_distance.data, 2, median),
-  min = apply(bikes_distance.data, 2, min),
-  max = apply(bikes_distance.data, 2, max),
-  n = apply(bikes_distance.data, 2, length)))
+  list(mean = apply(bikes_distance, 2, mean),
+  sd = apply(bikes_distance, 2, sd),
+  median = apply(bikes_distance, 2, median),
+  min = apply(bikes_distance, 2, min),
+  max = apply(bikes_distance, 2, max),
+  n = apply(bikes_distance, 2, length)))
 distStat
 
 # Number of Communters
@@ -140,10 +157,21 @@ View(month)
 numTripsPerMonth <- as.data.frame(table(month))
 View(numTripsPerMonth)
 names(numTripsPerMonth) <- c("Months", "Num_of_Trips")
+numTripsPerMonth$Season <- NA
+numTripsPerMonth$Season[1:2] <- "Winter"
+numTripsPerMonth$Season[3] <- "Spring"
+numTripsPerMonth$Season[4:5] <- "Summer"
+numTripsPerMonth$Season[6:8] <- "Fall"
+numTripsPerMonth$Season[9] <- "Winter" # modify the data frame to include seasons
+
 p <- ggplot(data = numTripsPerMonth,
-aes(x = Months, y = Num_of_Trips)) +
-geom_bar(stat="identity")
-p + labs(x = "Months", y = "Number of Trips")
+            aes(x = Months, y = Num_of_Trips, fill = Season)) + # fill in the months by season
+            geom_bar(stat="identity") +
+            geom_text(aes(label=Num_of_Trips), vjust=1.6, color="white", size=3.5) + # add number of trips to plot
+            xlab("Months") +
+            ylab("Number of Trips") +
+            theme_dark()
+            
 ggsave("ridesPerMonth.png")
 
 catAndPass <- data.frame(bike_share$Passholder.Type, bike_share$Trip.Route.Category)
